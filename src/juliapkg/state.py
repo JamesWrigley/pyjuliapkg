@@ -93,6 +93,7 @@ def reset_state():
 
     # resolution
     STATE["resolved"] = False
+    STATE["lockfile"], _ = get_config_bool("lockfile", default=True)
 
 
 reset_state()

@@ -76,6 +76,7 @@ option to `python`. The `-X` option has higher precedence.
 | `PYTHON_JULIAPKG_EXE=<exe>` | `-X juliapkg-exe=<exe>` | The Julia executable to use. |
 | `PYTHON_JULIAPKG_PROJECT=<project>` | `-X juliapkg-project=<project>` | The Julia project where packages are installed. |
 | `PYTHON_JULIAPKG_OFFLINE=<yes/no>` | `-X juliapkg-offline=<yes/no>` | Work in Offline Mode - does not install Julia or any packages. |
+| `PYTHON_JULIAPKG_LOCKFILE=<yes/no>` | `-X juliapkg-lockfile=<yes/no>` | Disable creating a lockfile in the project to protect against concurrent modifications. |
 
 ### Which Julia gets used?
 
@@ -121,3 +122,12 @@ will not attempt to download Julia or any packages.
 
 Resolving will fail if Julia is not already installed. It is up to you to install any
 required Julia packages.
+
+### Using read-only environments
+
+JuliaPkg can write to the environment during environment resolution, which can
+interfere with using read-only environments (e.g. a shared environment on an HPC
+system). To stop JuliaPkg from making any writes you need to set the following
+environment variables (or their argument counterparts):
+- `PYTHON_JULIAPKG_OFFLINE=yes`
+- `PYTHON_JULIAPKG_LOCKFILE=no`

@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 from multiprocessing import Pool
 
+import pytest
 import juliapkg
 
 
@@ -21,6 +22,27 @@ def test_import():
 
 def test_resolve():
     assert juliapkg.resolve() is True
+
+    # Check that the lockfile option is respected
+    project_dir = juliapkg.state.STATE["project"]
+    project_permissions = os.stat(project_dir).st_mode
+    # We need to remove any existing lockfile first
+    os.remove(os.path.join(project_dir, "lock.pid"))
+    os.chmod(project_dir, 0o555)
+    try:
+        # This should raise a PermissionError since resolve() will try to use a
+        # lockfile by default.
+        with pytest.raises(PermissionError):
+            juliapkg.resolve(force=True)
+
+        # Setting these two environment variables should stop all writes to the
+        # project.
+        os.environ["PYTHON_JULIAPKG_LOCKFILE"] = "no"
+        os.environ["PYTHON_JULIAPKG_OFFLINE"] = "yes"
+        juliapkg.state.reset_state()
+        juliapkg.resolve(force=True)
+    finally:
+        os.chmod(project_dir, project_permissions)
 
 
 def resolve_in_tempdir(tempdir):

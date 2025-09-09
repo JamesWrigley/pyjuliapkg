@@ -434,20 +434,25 @@ def resolve(force=False, dry_run=False, update=False):
     if (not force) and STATE["resolved"]:
         return True
     STATE["resolved"] = False
-    # use a lock to prevent concurrent resolution
+
+    # Optionally use a lock to prevent concurrent resolution
     project = STATE["project"]
     os.makedirs(project, exist_ok=True)
     lock_file = os.path.join(project, "lock.pid")
-    lock = FileLock(lock_file)
-    try:
-        lock.acquire(timeout=3)
-    except TimeoutError:
-        log(
-            f"Waiting for lock on {lock_file} to be freed. This normally means that"
-            " another process is resolving. If you know that no other process is"
-            " resolving, delete this file to proceed."
-        )
-        lock.acquire()
+    lock = None
+
+    if STATE["lockfile"]:
+        lock = FileLock(lock_file)
+        try:
+            lock.acquire(timeout=3)
+        except TimeoutError:
+            log(
+                f"Waiting for lock on {lock_file} to be freed. This normally means that"
+                " another process is resolving. If you know that no other process is"
+                " resolving, delete this file to proceed."
+            )
+            lock.acquire()
+
     try:
         # see if we can skip resolving
         if not force:
@@ -532,7 +537,8 @@ def resolve(force=False, dry_run=False, update=False):
         STATE["version"] = ver
         return True
     finally:
-        lock.release()
+        if STATE["lockfile"]:
+            lock.release()
 
 
 def run_julia(script, executable=None, project=None):
